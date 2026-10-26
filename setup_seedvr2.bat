@@ -1,0 +1,67 @@
+@echo off
+setlocal
+rem ============================================================
+rem  SeedVR2 one-time setup for STOP/Djvu Video Recovery
+rem  Creates .\seedvr2 with a Python venv, the SeedVR2 CLI and
+rem  pre-downloaded models (~25 GB). Needs internet + NVIDIA GPU.
+rem ============================================================
+cd /d "%~dp0"
+set "DIR=seedvr2"
+
+where uv >nul 2>nul
+if not errorlevel 1 goto :have_uv
+echo [1/6] Installing uv Python package manager...
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+if errorlevel 1 goto :fail
+set "PATH=%USERPROFILE%\.local\bin;%PATH%"
+where uv >nul 2>nul
+if errorlevel 1 goto :fail
+goto :uv_done
+:have_uv
+echo [1/6] uv already installed
+:uv_done
+
+if exist "%DIR%\inference_cli.py" goto :clone_done
+echo [2/6] Cloning SeedVR2 CLI...
+git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git "%DIR%"
+if errorlevel 1 goto :fail
+goto :clone_done
+:clone_done
+echo [2/6] SeedVR2 clone present
+
+if exist "%DIR%\.venv\Scripts\python.exe" goto :venv_done
+echo [3/6] Creating Python 3.12 virtual environment...
+uv venv "%DIR%\.venv" --python 3.12
+if errorlevel 1 goto :fail
+goto :venv_done
+:venv_done
+echo [3/6] Virtual environment present
+
+echo [4/6] Installing PyTorch CUDA + dependencies, several GB...
+uv pip install --python "%DIR%\.venv\Scripts\python.exe" torch torchvision --index-url https://download.pytorch.org/whl/cu128
+if errorlevel 1 goto :fail
+rem NOTE: no sageattention install - it has no working Windows build
+rem (pure-Python wheel, requires Linux-only triton). The CLI's "sdpa"
+rem attention mode already uses PyTorch's native flash-attention kernels.
+uv pip install --python "%DIR%\.venv\Scripts\python.exe" -r "%DIR%\requirements.txt"
+if errorlevel 1 goto :fail
+
+echo [5/6] Pre-downloading models, ~20 GB...
+"%DIR%\.venv\Scripts\python.exe" "%~dp0download_seedvr2_models.py" "%DIR%\models\SEEDVR2"
+if errorlevel 1 goto :fail
+
+echo [6/6] Verifying installation...
+"%DIR%\.venv\Scripts\python.exe" -c "import torch; print('torch', torch.__version__, '- CUDA available:', torch.cuda.is_available())"
+if errorlevel 1 goto :fail
+
+echo.
+echo ============================================================
+echo  SeedVR2 is ready. The app will now show the seedvr2
+echo  models in the Upscale dropdown.
+echo ============================================================
+exit /b 0
+
+:fail
+echo.
+echo SETUP FAILED - see the messages above.
+exit /b 1

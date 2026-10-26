@@ -1,0 +1,25 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+
+# --- PyInstaller build artifacts ---
+build/
+dist/
+_tmp_download/
+_tmp_build/
+
+# --- Downloaded third-party binaries (see README "Setup") ---
+ffmpeg/
+esrgan/
+seedvr2/
+
+# --- Runtime output and logs ---
+output/
+recovered/
+recovery_log.txt
+
+# --- Editor/OS noise ---
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
