@@ -10,6 +10,11 @@ of **STOP/Djvu ransomware-encrypted (`.maas`) video files**.
 - Single-folder app: `VideoUpscalerRecovery.exe` + `_internal\` +
   `seedvr2\` — copy the whole folder, no installer
 
+<p align="center">
+  <img src="assets/screenshot.png"
+       alt="Video Upscaler and Recovery — main window" width="640">
+</p>
+
 ## Requirements
 
 - Windows 10/11 (64-bit)
@@ -40,7 +45,8 @@ would destroy a `seedvr2\` + `output\` already living there.
 *runtime* dependency and is deliberately not part of the build:
 double-click `setup_seedvr2.bat` **inside the shipped folder**
 (`dist\VideoUpscalerRecovery\`). It creates `seedvr2\` with a Python
-venv, the repo, and runs `download_seedvr2_models.py`.
+venv, the repo, runs `download_seedvr2_models.py`, and applies
+`seedvr2_patch.py` (VRAM telemetry fix — see below).
 
 Without `seedvr2\` the app still works — the SeedVR2 entries simply do
 not appear in the model dropdown.
@@ -54,6 +60,9 @@ not appear in the model dropdown.
    - **Upscale (AI, needs NVIDIA GPU)** (on by default) — pick a model
      and scale/target resolution
    - **Write log file** — appends to `recovery_log.txt` next to the exe
+   - **SeedVR2** (all on by default) — low tiling, DiT offload
+     to CPU, VAE offload to CPU; memory-safety options that only
+     affect the SeedVR2 models (greyed out for the Real-ESRGAN models)
 3. **Start** — disabled until there are processable files *and* at least
    one of Recovery / Upscale is on.
 
@@ -109,10 +118,28 @@ because only the header is destroyed.
 | `setup_and_build.bat` | fresh-PC one-shot: Python check, ffmpeg + esrgan download, build |
 | `build.bat` | build only (temp build + merge into `dist\`) |
 | `setup_seedvr2.bat` / `download_seedvr2_models.py` | SeedVR2 install (run in the shipped folder) |
+| `seedvr2_patch.py` | patches the third-party SeedVR2 CLI so VRAM telemetry follows `--cuda_device` (applied by `setup_seedvr2.bat`) |
 
 `ffmpeg\`, `esrgan\`, `seedvr2\` are downloaded at setup time (see
 above); `dist\`, `output\`, `recovered\` and `recovery_log.txt` are
 build/runtime artifacts.
+
+## Third-party projects
+
+This app is built on several open-source projects:
+
+| Project | What it provides here | Link |
+|---|---|---|
+| SeedVR2 CLI (NumZ) | the diffusion upscaler backend - the `seedvr2\` CLI the app runs | [numz/ComfyUI-SeedVR2_VideoUpscaler](https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler) |
+| SeedVR / SeedVR2 | the 3B/7B restoration model weights and the research behind SeedVR2 | [ByteDance-Seed/SeedVR](https://github.com/ByteDance-Seed/SeedVR) |
+| Real-ESRGAN (ncnn-vulkan) | the fast 2x/4x upscaler binary in the `esrgan\` folder | [xinntao/Real-ESRGAN-ncnn-vulkan](https://github.com/xinntao/Real-ESRGAN-ncnn-vulkan) |
+| Real-ESRGAN | the underlying image-restoration algorithm | [xinntao/Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) |
+| FFmpeg | video decode / re-encode / mux in the `ffmpeg\` folder | [ffmpeg.org](https://ffmpeg.org) |
+| PyInstaller | packages the app into the standalone exe | [pyinstaller/pyinstaller](https://github.com/pyinstaller/pyinstaller) |
+| uv | creates the SeedVR2 Python venv (used by `setup_seedvr2.bat`) | [astral-sh/uv](https://github.com/astral-sh/uv) |
+| ncnn | the inference engine inside Real-ESRGAN-ncnn-vulkan | [Tencent/ncnn](https://github.com/Tencent/ncnn) |
+
+Each is used under its own open-source license.
 
 ## Notes
 

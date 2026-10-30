@@ -1015,7 +1015,11 @@ def upscale_video(src, dst, model, scale, on_frame=None):
 # slower. It is resolution-target based, so "scale" means the target
 # short-side resolution in pixels (e.g. 1080).
 SEEDVR2_DIR = "seedvr2"
-SEEDVR2_CHUNK = 41   # streaming chunk size (4n+1), gives chunk-level progress
+# DiT batch size + streaming chunk size (4n+1, gives chunk-level progress).
+# "Normal" is the fastest setting (big cards); "low" trades speed for VRAM
+# headroom - 16 GB cards running 1080p / 7B models.
+SEEDVR2_BATCH, SEEDVR2_CHUNK = 13, 41
+SEEDVR2_BATCH_LOW, SEEDVR2_CHUNK_LOW = 8, 24
 SEEDVR2_MODELS = {
     "seedvr2_3b": "seedvr2_ema_3b_fp8_e4m3fn.safetensors",
     "seedvr2_3b_gguf": "seedvr2_ema_3b-Q8_0.gguf",
@@ -1057,7 +1061,8 @@ def seedvr2_best_gpu():
 
 
 def _run_seedvr2(sv, in_path, out_path, model_key, target_res,
-                 cuda_devices, on_frame=None, debug=False):
+                 cuda_devices, on_frame=None, debug=False,
+                 low_tiling=True, dit_offload=True, vae_offload=True):
     """Run the SeedVR2 CLI on one file. Returns (ok, msg).
     Progress is parsed from the CLI's chunk/tqdm output lines (read in a
     thread so the pipe never deadlocks)."""
@@ -1069,14 +1074,16 @@ def _run_seedvr2(sv, in_path, out_path, model_key, target_res,
         log("seedvr2: FAIL: model file missing: %s" % model_file)
         return False, ("model not downloaded: %s "
                        "(run setup_seedvr2.bat)" % model_file)
+    batch, chunk = (SEEDVR2_BATCH_LOW, SEEDVR2_CHUNK_LOW) if low_tiling \
+        else (SEEDVR2_BATCH, SEEDVR2_CHUNK)
     cmd = [sv["python"], sv["cli"], in_path,
            "--output", out_path,
            "--model_dir", sv["models"],
            "--dit_model", model_file,
            "--resolution", str(target_res),
-           "--batch_size", "13",
+           "--batch_size", str(batch),
            "--temporal_overlap", "3",
-           "--chunk_size", str(SEEDVR2_CHUNK),
+           "--chunk_size", str(chunk),
            "--vae_encode_tiled", "--vae_decode_tiled",
            "--color_correction", "lab",
            "--cache_dit", "--cache_vae",
@@ -1085,21 +1092,21 @@ def _run_seedvr2(sv, in_path, out_path, model_key, target_res,
            # Windows - the sageattention/flash-attn packages have no
            # Windows wheels)
            "--attention_mode", "sdpa"]
-    # CPU offload only for small cards: on >=12 GB VRAM every model
-    # (3B/7B, FP8/GGUF) fits fully in VRAM and offloading just shuffles
-    # weights over PCIe every step (the old ~7h runs did this on a 16 GB
-    # card). Unknown/missing VRAM info stays conservative (offload ON).
+    # CPU offload is a user toggle (GUI, default ON) - it protects
+    # smaller cards at the cost of PCIe weight shuffling every step.
+    if dit_offload:
+        cmd += ["--dit_offload_device", "cpu"]
+    if vae_offload:
+        cmd += ["--vae_offload_device", "cpu"]
+    # GGUF BlockSwap: still automatic for small cards - it keeps the
+    # quantized models inside <12 GB VRAM even with offload toggled off.
     best_vram = max((g[2] for g in list_gpus()), default=0)
-    needs_offload = best_vram < 12000
-    if needs_offload:
-        log("seedvr2: best GPU has %d MB VRAM - using CPU offload"
-            % best_vram)
-        cmd += ["--dit_offload_device", "cpu",
-                "--vae_offload_device", "cpu"]
-        if model_key in ("seedvr2_3b_gguf", "seedvr2_7b_gguf"):
-            # GGUF variants: BlockSwap keeps them inside small cards
-            cmd += ["--blocks_to_swap", "32" if "3b" in model_key else "36",
-                    "--swap_io_components"]
+    if best_vram < 12000 and \
+            model_key in ("seedvr2_3b_gguf", "seedvr2_7b_gguf"):
+        cmd += ["--blocks_to_swap", "32" if "3b" in model_key else "36",
+                "--swap_io_components"]
+    log("seedvr2: batch=%d chunk=%d dit_offload=%s vae_offload=%s"
+        % (batch, chunk, dit_offload, vae_offload))
     if cuda_devices:
         cmd += ["--cuda_device", cuda_devices]
     if debug:
@@ -1134,8 +1141,8 @@ def _run_seedvr2(sv, in_path, out_path, model_key, target_res,
                 if m:
                     # Authoritative per-chunk progress (force=True, printed
                     # whenever the video streams in >1 chunk)
-                    state["done"] = (int(m.group(1)) - 1) * SEEDVR2_CHUNK
-                    state["total"] = int(m.group(2)) * SEEDVR2_CHUNK
+                    state["done"] = (int(m.group(1)) - 1) * chunk
+                    state["total"] = int(m.group(2)) * chunk
                     continue
                 # Generic N/M progress only before the first chunk is seen,
                 # so --debug chatter can't overwrite the chunk-based counter
@@ -1204,7 +1211,8 @@ def seedvr2_preflight(model_key):
 
 
 def seedvr2_upscale(src, dst, model_key, target_res, on_frame=None,
-                    debug=False, need_clean=True):
+                    debug=False, need_clean=True, low_tiling=True,
+                    dit_offload=True, vae_offload=True):
     """AI-upscale a video with SeedVR2 (diffusion).
 
     Pipeline: raw -> clean H.264 (ffmpeg) -> SeedVR2 CLI -> video ->
@@ -1255,7 +1263,10 @@ def seedvr2_upscale(src, dst, model_key, target_res, on_frame=None,
         cuda = seedvr2_best_gpu()
         log("seedvr2: cuda device: %s" % (cuda or "default (0)"))
         ok, msg = _run_seedvr2(sv, clean, tmp, model_key, target_res,
-                               cuda, on_frame=on_frame, debug=debug)
+                               cuda, on_frame=on_frame, debug=debug,
+                               low_tiling=low_tiling,
+                               dit_offload=dit_offload,
+                               vae_offload=vae_offload)
         if not ok or not (os.path.exists(tmp) and os.path.getsize(tmp) > 0):
             log("seedvr2: FAIL: %s" % (msg or "no output"))
             return False, "SeedVR2 failed: %s" % (msg or "no output")
@@ -1325,7 +1336,8 @@ def _bad_result(src, name, reason):
 
 def run_batch(selected_folder, files, on_progress=None,
               do_upscale=True, up_model="animevideov3", up_scale=2,
-              do_log=True):
+              do_log=True, low_tiling=True, dit_offload=True,
+              vae_offload=True):
     """Process a list of video files: recover .maas ransomware files and /
     or H.264-convert legacy-codec videos (automatic), and optionally
     AI-upscale.
@@ -1517,7 +1529,10 @@ def run_batch(selected_folder, files, on_progress=None,
                         ok, msg = seedvr2_upscale(src_for_up, out, up_model,
                                                   up_scale, on_frame=fcb,
                                                   debug=do_log,
-                                                  need_clean=need_clean)
+                                                  need_clean=need_clean,
+                                                  low_tiling=low_tiling,
+                                                  dit_offload=dit_offload,
+                                                  vae_offload=vae_offload)
                     else:
                         out = unique_path(up_dir,
                                           "%s_UP%dX_%s" % (stem, up_scale, tag),

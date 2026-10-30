@@ -55,6 +55,19 @@ Upscale (AI, needs NVIDIA GPU)  ON by default.
 Write log file                ON by default.
     Appends a log to recovery_log.txt in this folder.
 
+SeedVR2 VRAM options          All ON by default. They only affect
+    the seedvr2 models (not the Real-ESRGAN ones) and trade
+    speed for memory safety:
+      Low tiling (less VRAM, slower)
+          Smaller processing tiles - keeps big jobs like 1080p
+          inside cards with ~16 GB of video memory.
+      DiT offload to CPU
+          Keeps part of the model in system RAM.
+      VAE offload to CPU
+          Same, for the image-reconstruction part of the model.
+    Leave them ON. If your card has a lot of free video memory
+    and you want maximum speed, you can turn them OFF.
+
 The Start button stays disabled until there are files to
 process AND at least one of Recovery / Upscale is enabled.
 

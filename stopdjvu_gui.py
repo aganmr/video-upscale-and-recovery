@@ -83,6 +83,15 @@ class App:
             self.scale_box.set("2x")
             self.scale_lbl.config(text="Scale:")
         self.scale_box.config(state=st)
+        self._update_seedvr2_opts_state()
+
+    def _update_seedvr2_opts_state(self):
+        """The three SeedVR2 VRAM toggles only apply to the seedvr2
+        models - disable them for the Real-ESRGAN models."""
+        st = "normal" if self._model_key().startswith("seedvr2") else "disabled"
+        for cb in (self.cb_low_tiling, self.cb_dit_offload,
+                   self.cb_vae_offload):
+            cb.config(state=st)
 
     def __init__(self, root):
         self.root = root
@@ -97,11 +106,15 @@ class App:
         self.do_maas = tk.BooleanVar(value=False)  # .maas recovery: OFF
         self.do_upscale = tk.BooleanVar(value=True)  # upscaling: ON
         self.do_log = tk.BooleanVar(value=True)  # log file: ON
+        # SeedVR2 VRAM options (no-op for ESRGAN models), all default ON
+        self.low_tiling = tk.BooleanVar(value=True)
+        self.dit_offload = tk.BooleanVar(value=True)
+        self.vae_offload = tk.BooleanVar(value=True)
         self.up_model = tk.StringVar(value="animevideov3")
         self.up_scale = tk.StringVar(value="2")
 
         self._build_widgets()
-        self._center(640, 408)
+        self._center(640, 444)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.after(100, self._poll_queue)
 
@@ -148,8 +161,26 @@ class App:
             values=["2x", "4x"])
         self.scale_box.pack(side="left")
         self.scale_box.set("2x")
-        self.seedvr2_hint.pack(fill="x", padx=12)
+        # Only take up a row when there is actually a message to show
+        # (i.e. SeedVR2 not installed). An empty hint label would
+        # otherwise add a full row of vertical space before the SeedVR2 row.
+        if self.seedvr2_hint.cget("text"):
+            self.seedvr2_hint.pack(fill="x", padx=12)
         self.up_model.trace_add("write", self._on_model_change)
+
+        sv2 = ttk.Frame(self.root)
+        sv2.pack(fill="x", **pad)
+        ttk.Label(sv2, text="SeedVR2").pack(side="left")
+        self.cb_low_tiling = ttk.Checkbutton(
+            sv2, text="Low tiling (less VRAM, slower)",
+            variable=self.low_tiling)
+        self.cb_low_tiling.pack(side="left", padx=(12, 0))
+        self.cb_dit_offload = ttk.Checkbutton(
+            sv2, text="DiT offload to CPU", variable=self.dit_offload)
+        self.cb_dit_offload.pack(side="left", padx=(14, 0))
+        self.cb_vae_offload = ttk.Checkbutton(
+            sv2, text="VAE offload to CPU", variable=self.vae_offload)
+        self.cb_vae_offload.pack(side="left", padx=(14, 0))
 
         btns = ttk.Frame(self.root)
         btns.pack(fill="x", **pad)
@@ -175,6 +206,7 @@ class App:
         self.status2.pack(fill="x", padx=8, pady=(0, 6))
 
         self._folder_trace()
+        self._update_seedvr2_opts_state()
 
     def _center(self, w, h):
         sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
@@ -327,18 +359,23 @@ class App:
         t = threading.Thread(
             target=self._worker,
             args=(f, files, do_upscale, up_model, up_scale,
-                  self.do_log.get()),
+                  self.do_log.get(), self.low_tiling.get(),
+                  self.dit_offload.get(), self.vae_offload.get()),
             daemon=True)
         t.start()
 
     # ------------------------------------------------------------- worker
     def _worker(self, folder, files, do_upscale=True,
-                up_model="animevideov3", up_scale=2, do_log=True):
+                up_model="animevideov3", up_scale=2, do_log=True,
+                low_tiling=True, dit_offload=True, vae_offload=True):
         def cb(i, total, name, phase, r):
             self.q.put(("progress", i, total, name, phase, r))
         try:
             results = run_batch(folder, files, cb,
-                                do_upscale, up_model, up_scale, do_log=do_log)
+                                do_upscale, up_model, up_scale, do_log=do_log,
+                                low_tiling=low_tiling,
+                                dit_offload=dit_offload,
+                                vae_offload=vae_offload)
         except Exception as e:
             results = []
             self.q.put(("fatal", str(e)))
