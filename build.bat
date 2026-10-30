@@ -22,7 +22,10 @@ if not exist "%TMPDIST%\VideoUpscalerRecovery\VideoUpscalerRecovery.exe" goto :f
 if not exist "dist\VideoUpscalerRecovery" mkdir "dist\VideoUpscalerRecovery"
 copy /y "%TMPDIST%\VideoUpscalerRecovery\VideoUpscalerRecovery.exe" "dist\VideoUpscalerRecovery\" >nul
 copy /y "README_user.txt" "dist\VideoUpscalerRecovery\" >nul
+copy /y "setup.bat" "dist\VideoUpscalerRecovery\" >nul
+copy /y "enable_seedvr2.bat" "dist\VideoUpscalerRecovery\" >nul
 copy /y "seedvr2_patch.py" "dist\VideoUpscalerRecovery\" >nul
+copy /y "download_seedvr2_models.py" "dist\VideoUpscalerRecovery\" >nul
 rmdir /s /q "dist\VideoUpscalerRecovery\_internal" 2>nul
 xcopy /e /y /q "%TMPDIST%\VideoUpscalerRecovery\_internal" "dist\VideoUpscalerRecovery\_internal\" >nul
 if errorlevel 1 goto :fail

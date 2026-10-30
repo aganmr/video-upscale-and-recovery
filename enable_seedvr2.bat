@@ -1,13 +1,24 @@
 @echo off
-setlocal
+setlocal EnableExtensions
 rem ============================================================
-rem  SeedVR2 one-time setup for STOP/Djvu Video Recovery
+rem  enable_seedvr2.bat - OPTIONAL: enable the SeedVR2 models
 rem  Creates .\seedvr2 with a Python venv, the SeedVR2 CLI and
 rem  pre-downloaded models (~25 GB), and applies the VRAM telemetry
 rem  patch (seedvr2_patch.py). Needs internet + NVIDIA GPU.
+rem
+rem  Run AFTER setup.bat. Only needed for the high-quality
+rem  seedvr2 models in the Upscale dropdown.
 rem ============================================================
 cd /d "%~dp0"
 set "DIR=seedvr2"
+
+echo.
+echo Enabling SeedVR2 (downloads ~25 GB, one-time).
+echo This creates .\seedvr2 with a Python venv, the CLI and models.
+set "CONT="
+set /p "CONT=Press Y to continue, any other key to cancel: "
+if /i not "%CONT%"=="Y" goto :cancel
+echo.
 
 where uv >nul 2>nul
 if not errorlevel 1 goto :have_uv
@@ -64,6 +75,11 @@ echo ============================================================
 echo  SeedVR2 is ready. The app will now show the seedvr2
 echo  models in the Upscale dropdown.
 echo ============================================================
+exit /b 0
+
+:cancel
+echo.
+echo Cancelled - nothing was done.
 exit /b 0
 
 :fail

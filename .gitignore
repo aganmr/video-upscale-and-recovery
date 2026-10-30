@@ -7,6 +7,10 @@ build/
 dist/
 _tmp_download/
 _tmp_build/
+_tmp_release/
+
+# --- GitHub release zip (uploaded as a release asset) ---
+release/
 
 # --- Downloaded third-party binaries (see README "Setup") ---
 ffmpeg/

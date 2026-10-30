@@ -39,14 +39,31 @@ Both scripts build into a temp folder and merge only the exe +
 `_internal\` into `dist\` — PyInstaller wipes its target folder, which
 would destroy a `seedvr2\` + `output\` already living there.
 
+`release_build.bat` builds the **slim** GitHub release (no
+`ffmpeg\`/`esrgan\` bundled, ~25 MB zip) and zips it under `release\`.
+
+## Downloading a release
+
+Easiest way to run the app: download
+`VideoUpscalerRecovery-v1.0.0-windows.zip` from the [releases
+page](https://github.com/aganmr/video-upscale-and-recovery/releases),
+extract it, then in the extracted folder:
+
+1. Double-click **`setup.bat`** (one-time) — downloads `ffmpeg\` +
+   `esrgan\` next to the exe.
+2. (Optional) Double-click **`enable_seedvr2.bat`** — adds the
+   high-quality SeedVR2 models (~25 GB).
+3. Run **`VideoUpscalerRecovery.exe`**.
+
 ## SeedVR2 setup (on the machine that uses the app)
 
 **SeedVR2** (optional, only for the seedvr2 models) is a ~24 GB
 *runtime* dependency and is deliberately not part of the build:
-double-click `setup_seedvr2.bat` **inside the shipped folder**
+double-click `enable_seedvr2.bat` **inside the shipped folder**
 (`dist\VideoUpscalerRecovery\`). It creates `seedvr2\` with a Python
 venv, the repo, runs `download_seedvr2_models.py`, and applies
-`seedvr2_patch.py` (VRAM telemetry fix — see below).
+`seedvr2_patch.py` (VRAM telemetry fix — see below). It asks for a
+`Y` before starting the download.
 
 Without `seedvr2\` the app still works — the SeedVR2 entries simply do
 not appear in the model dropdown.
@@ -117,8 +134,10 @@ because only the header is destroyed.
 | `VideoUpscalerRecovery.spec` | PyInstaller spec |
 | `setup_and_build.bat` | fresh-PC one-shot: Python check, ffmpeg + esrgan download, build |
 | `build.bat` | build only (temp build + merge into `dist\`) |
-| `setup_seedvr2.bat` / `download_seedvr2_models.py` | SeedVR2 install (run in the shipped folder) |
-| `seedvr2_patch.py` | patches the third-party SeedVR2 CLI so VRAM telemetry follows `--cuda_device` (applied by `setup_seedvr2.bat`) |
+| `release_build.bat` | slim GitHub release build (no ffmpeg/esrgan) + zip |
+| `setup.bat` | one-time ffmpeg + esrgan download next to the exe (shipped in the release) |
+| `enable_seedvr2.bat` / `download_seedvr2_models.py` | optional SeedVR2 install (run in the shipped folder) |
+| `seedvr2_patch.py` | patches the third-party SeedVR2 CLI so VRAM telemetry follows `--cuda_device` (applied by `enable_seedvr2.bat`) |
 
 `ffmpeg\`, `esrgan\`, `seedvr2\` are downloaded at setup time (see
 above); `dist\`, `output\`, `recovered\` and `recovery_log.txt` are
@@ -136,7 +155,7 @@ This app is built on several open-source projects:
 | Real-ESRGAN | the underlying image-restoration algorithm | [xinntao/Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) |
 | FFmpeg | video decode / re-encode / mux in the `ffmpeg\` folder | [ffmpeg.org](https://ffmpeg.org) |
 | PyInstaller | packages the app into the standalone exe | [pyinstaller/pyinstaller](https://github.com/pyinstaller/pyinstaller) |
-| uv | creates the SeedVR2 Python venv (used by `setup_seedvr2.bat`) | [astral-sh/uv](https://github.com/astral-sh/uv) |
+| uv | creates the SeedVR2 Python venv (used by `enable_seedvr2.bat`) | [astral-sh/uv](https://github.com/astral-sh/uv) |
 | ncnn | the inference engine inside Real-ESRGAN-ncnn-vulkan | [Tencent/ncnn](https://github.com/Tencent/ncnn) |
 
 Each is used under its own open-source license.

@@ -9,7 +9,7 @@ rem    3. downloads Real-ESRGAN   -> esrgan\ (exe + models)
 rem    4. builds the exe          -> dist\VideoUpscalerRecovery\
 rem
 rem  SeedVR2 is deliberately NOT set up here: it is a runtime
-rem  dependency (~24 GB). Run setup_seedvr2.bat in the SHIPPED
+rem  dependency (~24 GB). Run enable_seedvr2.bat in the SHIPPED
 rem  folder (dist\VideoUpscalerRecovery\) on the machine that
 rem  will actually use the app.
 rem
@@ -128,7 +128,10 @@ if not exist "%TMPDIST%\VideoUpscalerRecovery\VideoUpscalerRecovery.exe" (
 if not exist "dist\VideoUpscalerRecovery" mkdir "dist\VideoUpscalerRecovery"
 copy /y "%TMPDIST%\VideoUpscalerRecovery\VideoUpscalerRecovery.exe" "dist\VideoUpscalerRecovery\" >nul
 copy /y "README_user.txt" "dist\VideoUpscalerRecovery\" >nul
+copy /y "setup.bat" "dist\VideoUpscalerRecovery\" >nul
+copy /y "enable_seedvr2.bat" "dist\VideoUpscalerRecovery\" >nul
 copy /y "seedvr2_patch.py" "dist\VideoUpscalerRecovery\" >nul
+copy /y "download_seedvr2_models.py" "dist\VideoUpscalerRecovery\" >nul
 rmdir /s /q "dist\VideoUpscalerRecovery\_internal" 2>nul
 xcopy /e /y /q "%TMPDIST%\VideoUpscalerRecovery\_internal" "dist\VideoUpscalerRecovery\_internal\" >nul
 if errorlevel 1 (
@@ -145,7 +148,7 @@ echo ============================================================
 echo  DONE: dist\VideoUpscalerRecovery\VideoUpscalerRecovery.exe
 echo
 echo  Note: SeedVR2 was NOT set up. To enable the SeedVR2 models,
-echo  run setup_seedvr2.bat inside dist\VideoUpscalerRecovery\
+echo  run enable_seedvr2.bat inside dist\VideoUpscalerRecovery\
 echo  (downloads ~24 GB of models - do this on the machine that
 echo  will use the app).
 echo ============================================================

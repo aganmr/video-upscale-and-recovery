@@ -23,13 +23,16 @@ Prerequisites
 ----------------------------------------------------------------
 Quick start
 ----------------------------------------------------------------
-1. Double-click VideoUpscalerRecovery.exe
-2. "Source folder" -> Browse... and pick the folder with your
+1. First time only: double-click setup.bat in THIS folder and
+   wait. It downloads the two video tools the app needs
+   (ffmpeg + Real-ESRGAN). You only do this once.
+2. Double-click VideoUpscalerRecovery.exe
+3. "Source folder" -> Browse... and pick the folder with your
    videos (.mp4, and .maas files if you enabled recovery).
    "Scan subfolders" includes subfolders.
-3. Set the options (see below).
-4. Click Start.
-5. When it finishes, click "Open Output Folder" to see the
+4. Set the options (see below).
+5. Click Start.
+6. When it finishes, click "Open Output Folder" to see the
    results.
 
 ----------------------------------------------------------------
@@ -96,8 +99,9 @@ The seedvr2 models are not included (they are ~24 GB). To
 enable them:
 
   1. Make sure you are connected to the internet.
-  2. Double-click setup_seedvr2.bat in THIS folder and wait
-     (it downloads Python + the models; can take a while).
+  2. Double-click enable_seedvr2.bat in THIS folder, press Y,
+     and wait (it downloads Python + the models; can take a
+     while).
   3. Restart the app - the seedvr2 entries now appear in the
      Model list.
 
@@ -109,8 +113,9 @@ The other files in this folder
 ----------------------------------------------------------------
   output\                  your results (safe to delete; the
                            app recreates it)
-  seedvr2\                 created by setup_seedvr2.bat
-  setup_seedvr2.bat        the SeedVR2 setup (keep it)
+  setup.bat                one-time video-tools setup (run once)
+  seedvr2\                 created by enable_seedvr2.bat
+  enable_seedvr2.bat       the optional SeedVR2 setup (keep it)
   download_seedvr2_models.py  used by the setup (keep it)
   recovery_log.txt         the log file (created by the app)
   README_user.txt          this file

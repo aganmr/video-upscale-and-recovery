@@ -652,15 +652,16 @@ def recover_one(src, raw_dir):
 
 
 def find_ffmpeg():
-    """Bundled copy first, then PATH. Returns path or None."""
+    """Bundled copy first, then next to the exe (setup.bat), then PATH.
+    Returns path or None."""
     cand = os.environ.get("FFMPEG")
     if cand and os.path.exists(cand):
         return cand
-    if getattr(sys, "_MEIPASS", None):  # PyInstaller onedir
+    if getattr(sys, "_MEIPASS", None):  # PyInstaller onedir (bundled)
         p = os.path.join(sys._MEIPASS, "ffmpeg", "ffmpeg.exe")
         if os.path.exists(p):
             return p
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "ffmpeg.exe")
+    p = os.path.join(project_root(), "ffmpeg", "ffmpeg.exe")
     if os.path.exists(p):
         return p
     return shutil.which("ffmpeg")
@@ -741,12 +742,13 @@ UP_MODELS = {"animevideov3": "realesr-animevideov3",
 
 
 def find_esrgan():
-    r"""Bundled Real-ESRGAN-ncnn-vulkan binary (esrgan\ folder), else PATH."""
-    if getattr(sys, "_MEIPASS", None):  # PyInstaller onedir
+    r"""Bundled Real-ESRGAN-ncnn-vulkan binary (esrgan\ folder), then next
+    to the exe (setup.bat), else PATH."""
+    if getattr(sys, "_MEIPASS", None):  # PyInstaller onedir (bundled)
         p = os.path.join(sys._MEIPASS, "esrgan", ESRGAN_EXE)
         if os.path.exists(p):
             return p
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "esrgan", ESRGAN_EXE)
+    p = os.path.join(project_root(), "esrgan", ESRGAN_EXE)
     if os.path.exists(p):
         return p
     return shutil.which(ESRGAN_EXE)
@@ -1010,7 +1012,7 @@ def upscale_video(src, dst, model, scale, on_frame=None):
 
 # --------------------------------------------- SeedVR2 (diffusion upscaler)
 # Optional second engine: a full PyTorch/CUDA install living in the
-# seedvr2\ folder next to the program (installed by setup_seedvr2.bat).
+# seedvr2\ folder next to the program (installed by enable_seedvr2.bat).
 # Much higher quality than ESRGAN (true diffusion restoration) but far
 # slower. It is resolution-target based, so "scale" means the target
 # short-side resolution in pixels (e.g. 1080).
@@ -1073,7 +1075,7 @@ def _run_seedvr2(sv, in_path, out_path, model_key, target_res,
     if not os.path.exists(os.path.join(sv["models"], model_file)):
         log("seedvr2: FAIL: model file missing: %s" % model_file)
         return False, ("model not downloaded: %s "
-                       "(run setup_seedvr2.bat)" % model_file)
+                       "(run enable_seedvr2.bat)" % model_file)
     batch, chunk = (SEEDVR2_BATCH_LOW, SEEDVR2_CHUNK_LOW) if low_tiling \
         else (SEEDVR2_BATCH, SEEDVR2_CHUNK)
     cmd = [sv["python"], sv["cli"], in_path,
@@ -1181,7 +1183,7 @@ def seedvr2_preflight(model_key):
     if not sv:
         log("seedvr2 preflight: FAIL: seedvr2\\ folder not found")
         return False, ("SeedVR2 not installed "
-                       "(seedvr2\\ folder missing - run setup_seedvr2.bat)")
+                       "(seedvr2\\ folder missing - run enable_seedvr2.bat)")
     model_file = SEEDVR2_MODELS.get(model_key, "")
     if not model_file or not os.path.exists(os.path.join(sv["models"], model_file)):
         log("seedvr2 preflight: FAIL: model file missing")
@@ -1230,7 +1232,7 @@ def seedvr2_upscale(src, dst, model_key, target_res, on_frame=None,
     if not sv:
         log("seedvr2: FAIL: seedvr2\\ folder not found")
         return False, ("SeedVR2 not installed "
-                       "(seedvr2\\ folder missing - run setup_seedvr2.bat)")
+                       "(seedvr2\\ folder missing - run enable_seedvr2.bat)")
     ff = find_ffmpeg()
     if not ff:
         log("seedvr2: FAIL: ffmpeg not found")

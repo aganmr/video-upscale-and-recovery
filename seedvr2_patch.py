@@ -29,7 +29,7 @@ Usage:
     (default: the seedvr2\\ folder next to this script)
 
 Idempotent: re-running on an already-patched folder is a no-op.
-Re-run after any SeedVR2 update (setup_seedvr2.bat does this for you).
+Re-run after any SeedVR2 update (enable_seedvr2.bat does this for you).
 """
 import py_compile
 import sys

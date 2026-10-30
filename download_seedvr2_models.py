@@ -2,7 +2,7 @@
 """Pre-download the SeedVR2 models used by the app.
 
 Usage: python download_seedvr2_models.py <destination folder>
-(Invoked by setup_seedvr2.bat with the venv's Python.)
+(Invoked by enable_seedvr2.bat with the venv's Python.)
 """
 
 import os
@@ -25,7 +25,7 @@ def main():
         from huggingface_hub import hf_hub_download
     except ImportError:
         print("huggingface_hub is not installed in this Python - run it "
-              "with the seedvr2 venv (setup_seedvr2.bat does this).")
+              "with the seedvr2 venv (enable_seedvr2.bat does this).")
         return 1
     for repo, name in MODELS:
         target = os.path.join(dest, name)

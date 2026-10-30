@@ -21,9 +21,9 @@ from tkinter import filedialog, messagebox, ttk
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from recover_stopdjvu_video import (  # noqa: E402
-    collect_files, find_ffmpeg, get_output_dirs,
+    collect_files, find_ffmpeg, find_esrgan, get_output_dirs,
     ensure_output_dirs, run_batch, list_gpus,
-    current_log_path, find_seedvr2, terminate_all,
+    current_log_path, find_seedvr2, is_seedvr2, terminate_all,
 )
 
 
@@ -62,7 +62,7 @@ class App:
             self.seedvr2_hint.config(text="")
         else:
             self.seedvr2_hint.config(
-                text="SeedVR2 not installed - run setup_seedvr2.bat next to "
+                text="SeedVR2 not installed - run enable_seedvr2.bat next to "
                      "the app to enable the seedvr2 models")
         return vals
 
@@ -329,11 +329,14 @@ class App:
             messagebox.showwarning("No files",
                                    "No processable videos found in:\n" + f)
             return
-        if not find_ffmpeg():
+        have_ffmpeg = bool(find_ffmpeg())
+        if not have_ffmpeg:
             if not messagebox.askyesno(
                     "ffmpeg not found",
                     "ffmpeg was not found, so H.264 conversion and AI "
                     "upscaling will be skipped.\n\n"
+                    "Run setup.bat next to the app to install the video "
+                    "tools, then restart.\n\n"
                     "Continue with a plain copy of the videos?"):
                 return
 
@@ -347,6 +350,16 @@ class App:
                 return
             do_upscale = False
         up_model, up_scale = self._upscale_opts()
+        if (do_upscale and have_ffmpeg
+                and not is_seedvr2(up_model) and not find_esrgan()):
+            if not messagebox.askyesno(
+                    "Real-ESRGAN not found",
+                    "The Real-ESRGAN upscaler was not found, so the "
+                    "selected model cannot run.\n\n"
+                    "Run setup.bat next to the app to install the video "
+                    "tools, then restart.\n\n"
+                    "Continue without upscaling?"):
+                do_upscale = False
 
         self.running = True
         self.start_btn.config(state="disabled")
