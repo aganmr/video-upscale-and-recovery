@@ -44,8 +44,8 @@ would destroy a `seedvr2\` + `output\` already living there.
 
 ## Downloading a release
 
-Easiest way to run the app: download
-`VideoUpscalerRecovery-v1.0.0-windows.zip` from the [releases
+Easiest way to run the app: download the latest
+`VideoUpscalerRecovery-v<version>-windows.zip` from the [releases
 page](https://github.com/aganmr/video-upscale-and-recovery/releases),
 extract it, then in the extracted folder:
 

@@ -14,6 +14,7 @@ import queue
 import subprocess
 import sys
 import threading
+import webbrowser
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -25,6 +26,9 @@ from recover_stopdjvu_video import (  # noqa: E402
     ensure_output_dirs, run_batch, list_gpus,
     current_log_path, find_seedvr2, is_seedvr2, terminate_all,
 )
+
+APP_VERSION = "1.1.0"
+ISSUES_URL = "https://github.com/aganmr/video-upscale-and-recovery/issues"
 
 
 def dpi_aware():
@@ -95,8 +99,9 @@ class App:
 
     def __init__(self, root):
         self.root = root
-        root.title("Video Upscaler and Recovery")
+        root.title("Video Upscaler and Recovery  v" + APP_VERSION)
         root.resizable(False, False)
+        self._set_window_icon()
 
         self.q = queue.Queue()
         self.running = False
@@ -117,6 +122,21 @@ class App:
         self._center(640, 444)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.after(100, self._poll_queue)
+
+    def _set_window_icon(self):
+        """Set the window/taskbar icon (the bundled .ico). No-op when the
+        icon file is not present (e.g. running the source without a build)."""
+        for base in (getattr(sys, "_MEIPASS", None),
+                     os.path.dirname(os.path.abspath(__file__))):
+            if not base:
+                continue
+            p = os.path.join(base, "icons", "icon_c.ico")
+            if os.path.exists(p):
+                try:
+                    self.root.iconbitmap(p)
+                except tk.TclError:
+                    pass
+                return
 
     # ------------------------------------------------------------ layout
     def _build_widgets(self):
@@ -189,6 +209,9 @@ class App:
         self.start_btn.pack(side="left")
         ttk.Button(btns, text="Open Output Folder",
                    command=self._open_output).pack(side="right")
+        ttk.Button(btns, text="Report an issue",
+                   command=self._report_issue).pack(side="right",
+                                                     padx=(0, 10))
 
         prog = ttk.Frame(self.root)
         prog.pack(fill="x", **pad)
@@ -318,6 +341,9 @@ class App:
             return
         rec, _up = ensure_output_dirs(f)
         subprocess.Popen(["explorer", os.path.dirname(rec)])
+
+    def _report_issue(self):
+        webbrowser.open(ISSUES_URL)
 
     def _start(self):
         if self.running:

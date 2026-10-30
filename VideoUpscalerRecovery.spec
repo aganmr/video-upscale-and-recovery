@@ -5,7 +5,7 @@ a = Analysis(
     ['stopdjvu_gui.py'],
     pathex=[],
     binaries=[],
-    datas=[('ffmpeg', 'ffmpeg'), ('esrgan', 'esrgan')],
+    datas=[('ffmpeg', 'ffmpeg'), ('esrgan', 'esrgan'), ('assets/icons/icon_c.ico', 'icons')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -32,6 +32,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['assets/icons/icon_c.ico'],
 )
 coll = COLLECT(
     exe,

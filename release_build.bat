@@ -16,7 +16,7 @@ rem  Output:   release\VideoUpscalerRecovery-v<VERSION>-windows.zip
 rem ============================================================
 cd /d "%~dp0"
 
-set "VERSION=1.0.0"
+set "VERSION=1.1.0"
 set "APP=VideoUpscalerRecovery"
 set "STAGE=release\%APP%-v%VERSION%-windows"
 set "ZIP=release\%APP%-v%VERSION%-windows.zip"
@@ -28,6 +28,8 @@ echo === 1/3 Slim build (no ffmpeg\/esrgan\ bundled) ===
 python -m PyInstaller --noconfirm --windowed --onedir --name %APP% ^
   --distpath "%TMPDIST%" --workpath "%TMPDL%\work" ^
   --specpath "%TMPDL%" ^
+  --icon "%~dp0assets\icons\icon_c.ico" ^
+  --add-data "%~dp0assets\icons\icon_c.ico;icons" ^
   stopdjvu_gui.py
 if errorlevel 1 goto :fail
 if not exist "%TMPDIST%\%APP%\%APP%.exe" goto :fail

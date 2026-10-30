@@ -13,8 +13,10 @@ set "TMPDIST=%TMPDL%\dist"
 
 python -m PyInstaller --noconfirm --windowed --onedir --name VideoUpscalerRecovery ^
   --distpath "%TMPDIST%" --workpath "%TMPDL%\work" ^
+  --icon "assets/icons/icon_c.ico" ^
   --add-data "ffmpeg;ffmpeg" ^
   --add-data "esrgan;esrgan" ^
+  --add-data "assets/icons/icon_c.ico;icons" ^
   stopdjvu_gui.py
 if errorlevel 1 goto :fail
 if not exist "%TMPDIST%\VideoUpscalerRecovery\VideoUpscalerRecovery.exe" goto :fail

@@ -4,6 +4,13 @@ All notable changes to **Video Upscaler and Recovery** are documented
 here. The format follows [Keep a Changelog](https://keepachangelog.com/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-10-30
+
+### Added
+- App icon (film-strip design) for the window and the exe.
+- Version number shown in the window title bar.
+- "Report an issue" button that opens the project's GitHub issues page.
+
 ## [1.0.0] - 2026-10-30
 
 First release.
